@@ -1,0 +1,49 @@
+[project]
+name = "assistant"
+version = "0.1.0"
+description = "Lightweight local voice assistant"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = []
+
+[project.scripts]
+assistant = "assistant.__main__:main"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.6.0",
+    "ruff>=0.15.20",
+]
+
+[tool.uv]
+package = true
+
+[tool.ruff]
+target-version = "py313"
+line-length = 120
+indent-width = 4
+
+[tool.ruff.lint]
+select = [
+    "B",
+    "C4",
+    "E",
+    "F",
+    "I",
+    "RUF",
+    "SIM",
+    "UP",
+    "W",
+]
+
+ignore = []
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-sort-within-sections = true
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+docstring-code-format = true
