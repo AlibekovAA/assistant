@@ -12,3 +12,6 @@ lint:
 check:
 	uv run ruff check .
 	uv run ruff format --check .
+
+run:
+	uv run python -m assistant

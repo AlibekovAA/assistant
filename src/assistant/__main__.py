@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from assistant.core.application import Application
+
 
 def main() -> None:
-    print("Assistant started")
+    app = Application()
+    app.run()
 
 
 if __name__ == "__main__":
