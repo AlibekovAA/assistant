@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from assistant.audio.devices import AudioDevice, AudioDeviceCatalog
-from assistant.audio.dsp import rms, to_mono
+from assistant.audio.dsp import rms, to_mono, trim_silence
 from assistant.audio.exceptions import (
     AudioDeviceError,
     AudioError,
@@ -31,4 +31,5 @@ __all__ = [
     "AudioRecordingError",
     "rms",
     "to_mono",
+    "trim_silence",
 ]

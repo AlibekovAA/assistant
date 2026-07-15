@@ -38,10 +38,12 @@ class WakeConfig:
     listen_rms_threshold: float = 0.008
     listen_peak_threshold: float = 0.02
     listen_snr: float = 2.5
-    speech_rms_threshold: float = 0.01
-    min_speech_seconds: float = 0.3
-    silence_seconds: float = 0.8
-    utterance_max_seconds: float = 8.0
+    speech_rms_threshold: float = 0.008
+    speech_onset_seconds: float = 0.15
+    min_speech_seconds: float = 0.5
+    silence_seconds: float = 1.2
+    utterance_max_seconds: float = 12.0
+    post_wake_prune_seconds: float = 0.35
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,10 +89,12 @@ def load_config() -> Config:
             listen_rms_threshold=_float("ASSISTANT_WAKE_LISTEN_RMS", 0.008),
             listen_peak_threshold=_float("ASSISTANT_WAKE_LISTEN_PEAK", 0.02),
             listen_snr=_float("ASSISTANT_WAKE_LISTEN_SNR", 2.5),
-            speech_rms_threshold=_float("ASSISTANT_WAKE_SPEECH_RMS", 0.01),
-            min_speech_seconds=_float("ASSISTANT_WAKE_MIN_SPEECH_SECONDS", 0.3),
-            silence_seconds=_float("ASSISTANT_WAKE_SILENCE_SECONDS", 0.8),
-            utterance_max_seconds=_float("ASSISTANT_WAKE_UTTERANCE_MAX_SECONDS", 8.0),
+            speech_rms_threshold=_float("ASSISTANT_WAKE_SPEECH_RMS", 0.008),
+            speech_onset_seconds=_float("ASSISTANT_WAKE_SPEECH_ONSET_SECONDS", 0.15),
+            min_speech_seconds=_float("ASSISTANT_WAKE_MIN_SPEECH_SECONDS", 0.5),
+            silence_seconds=_float("ASSISTANT_WAKE_SILENCE_SECONDS", 1.2),
+            utterance_max_seconds=_float("ASSISTANT_WAKE_UTTERANCE_MAX_SECONDS", 12.0),
+            post_wake_prune_seconds=_float("ASSISTANT_WAKE_POST_WAKE_PRUNE_SECONDS", 0.35),
         )
         tts = TtsConfig(
             voice=_str("ASSISTANT_TTS_VOICE", "ru-RU-SvetlanaNeural"),
@@ -150,6 +154,9 @@ def load_config() -> Config:
     if wake.speech_rms_threshold <= 0:
         raise ConfigurationError(f"Invalid ASSISTANT_WAKE_SPEECH_RMS: {wake.speech_rms_threshold}")
 
+    if wake.speech_onset_seconds <= 0:
+        raise ConfigurationError(f"Invalid ASSISTANT_WAKE_SPEECH_ONSET_SECONDS: {wake.speech_onset_seconds}")
+
     if wake.min_speech_seconds <= 0:
         raise ConfigurationError(f"Invalid ASSISTANT_WAKE_MIN_SPEECH_SECONDS: {wake.min_speech_seconds}")
 
@@ -158,6 +165,9 @@ def load_config() -> Config:
 
     if wake.utterance_max_seconds <= 0:
         raise ConfigurationError(f"Invalid ASSISTANT_WAKE_UTTERANCE_MAX_SECONDS: {wake.utterance_max_seconds}")
+
+    if wake.post_wake_prune_seconds < 0:
+        raise ConfigurationError(f"Invalid ASSISTANT_WAKE_POST_WAKE_PRUNE_SECONDS: {wake.post_wake_prune_seconds}")
 
     if not tts.voice.strip():
         raise ConfigurationError("ASSISTANT_TTS_VOICE must not be empty")
@@ -186,9 +196,11 @@ def load_config() -> Config:
             listen_peak_threshold=wake.listen_peak_threshold,
             listen_snr=wake.listen_snr,
             speech_rms_threshold=wake.speech_rms_threshold,
+            speech_onset_seconds=wake.speech_onset_seconds,
             min_speech_seconds=wake.min_speech_seconds,
             silence_seconds=wake.silence_seconds,
             utterance_max_seconds=wake.utterance_max_seconds,
+            post_wake_prune_seconds=wake.post_wake_prune_seconds,
         ),
         tts=TtsConfig(
             voice=tts.voice.strip(),

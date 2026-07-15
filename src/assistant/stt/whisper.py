@@ -88,6 +88,7 @@ class WhisperStt:
         initial_prompt: str | None = None,
         hotwords: str | None = None,
         no_speech_threshold: float | None = None,
+        temperature: float | None = None,
     ) -> Transcript:
         if self._model is None:
             raise SttNotReadyError("Speech-to-text is not initialized")
@@ -99,6 +100,7 @@ class WhisperStt:
 
         use_vad = self._config.vad_filter if vad_filter is None else vad_filter
         use_beam = self._config.beam_size if beam_size is None else beam_size
+        use_temperature = 0.0 if temperature is None else temperature
 
         try:
             segments_iter, info = self._model.transcribe(
@@ -109,6 +111,7 @@ class WhisperStt:
                 condition_on_previous_text=False,
                 initial_prompt=initial_prompt,
                 hotwords=hotwords,
+                temperature=use_temperature,
                 no_speech_threshold=(0.6 if no_speech_threshold is None else no_speech_threshold),
                 compression_ratio_threshold=2.4,
                 log_prob_threshold=-0.8,

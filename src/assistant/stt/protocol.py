@@ -23,4 +23,5 @@ class SpeechToText(Protocol):
         initial_prompt: str | None = None,
         hotwords: str | None = None,
         no_speech_threshold: float | None = None,
+        temperature: float | None = None,
     ) -> Transcript: ...
