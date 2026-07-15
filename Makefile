@@ -13,4 +13,4 @@ check:
 	uv run mypy src
 
 run:
-	uv run python -m assistant
+	uv run python -u -m assistant

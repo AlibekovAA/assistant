@@ -7,6 +7,9 @@ requires-python = ">=3.13,<3.14"
 dependencies = [
     "numpy>=2.5.1",
     "sounddevice>=0.5.5",
+    "faster-whisper>=1.2.1",
+    "edge-tts>=7.2.8",
+    "miniaudio>=1.71",
 ]
 
 [project.scripts]
@@ -63,4 +66,13 @@ warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
 module = "sounddevice.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "faster_whisper.*",
+    "ctranslate2.*",
+    "edge_tts.*",
+    "miniaudio.*",
+]
 ignore_missing_imports = true
