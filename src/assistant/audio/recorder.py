@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import contextlib
 import queue
-import time
 
 import numpy as np
 from numpy.typing import NDArray
 import sounddevice as sd
 
 from assistant.audio.exceptions import AudioRecordingError
-from assistant.audio.models import AudioChunk, AudioData, AudioFormat
+from assistant.audio.models import AudioData, AudioFormat
 from assistant.logger import Logger
 
 
@@ -65,7 +64,7 @@ class AudioRecorder:
                 f"channels={audio_format.channels}, blocksize={blocksize}): {error}"
             ) from error
 
-    def read(self, *, timeout: float | None = 0.1) -> AudioChunk | None:
+    def read(self, *, timeout: float | None = 0.1) -> AudioData | None:
         if self._format is None:
             raise AudioRecordingError("Recording stream is not started")
 
@@ -74,7 +73,7 @@ class AudioRecorder:
         except queue.Empty:
             return None
 
-        return AudioChunk(samples=samples, format=self._format)
+        return AudioData(samples=samples, format=self._format)
 
     def stop(self) -> None:
         stream = self._stream
@@ -92,49 +91,6 @@ class AudioRecorder:
             raise AudioRecordingError(f"Failed to stop recording stream: {error}") from error
         finally:
             self._clear_queue()
-
-    def record(
-        self,
-        duration: float,
-        audio_format: AudioFormat,
-        *,
-        device: int | None = None,
-        blocksize: int = 1024,
-    ) -> AudioData:
-        audio_format.validate()
-
-        if duration <= 0:
-            raise AudioRecordingError(f"Invalid duration: {duration}")
-
-        chunks: list[NDArray[np.float32]] = []
-        target_frames = int(duration * audio_format.sample_rate)
-
-        try:
-            self.start(audio_format, device=device, blocksize=blocksize)
-            deadline = time.monotonic() + duration
-
-            while time.monotonic() < deadline:
-                remaining = deadline - time.monotonic()
-                chunk = self.read(timeout=min(0.1, max(remaining, 0.0)))
-
-                if chunk is not None:
-                    chunks.append(chunk.samples)
-        finally:
-            self.stop()
-
-        if not chunks:
-            raise AudioRecordingError(
-                "No audio captured "
-                f"(device={device}, sample_rate={audio_format.sample_rate}, "
-                f"channels={audio_format.channels}, duration={duration})"
-            )
-
-        samples = np.concatenate(chunks, axis=0)
-
-        if samples.shape[0] > target_frames:
-            samples = samples[:target_frames]
-
-        return AudioData(samples=samples, format=audio_format)
 
     def _on_audio(
         self,

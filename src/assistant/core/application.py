@@ -4,7 +4,7 @@ import signal
 import threading
 import types
 
-from assistant.audio import AudioManager
+from assistant.audio.manager import AudioManager
 from assistant.config import load_config
 from assistant.core.exceptions import AssistantError
 from assistant.core.pipeline import VoicePipeline
@@ -36,6 +36,8 @@ class Application:
             tts=self._tts,
             wake=self._wake,
             wake_config=self._config.wake,
+            utterance_config=self._config.utterance,
+            stt_config=self._config.stt,
             assistant_name=self._config.app_name,
         )
 

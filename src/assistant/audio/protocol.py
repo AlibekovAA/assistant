@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from assistant.audio.models import AudioChunk, AudioData, AudioFormat
+from assistant.audio.models import AudioData, AudioFormat
 
 
 class AudioCapture(Protocol):
@@ -17,18 +17,9 @@ class AudioCapture(Protocol):
         blocksize: int = 1024,
     ) -> None: ...
 
-    def read(self, *, timeout: float | None = 0.1) -> AudioChunk | None: ...
+    def read(self, *, timeout: float | None = 0.1) -> AudioData | None: ...
 
     def stop(self) -> None: ...
-
-    def record(
-        self,
-        duration: float,
-        audio_format: AudioFormat,
-        *,
-        device: int | None = None,
-        blocksize: int = 1024,
-    ) -> AudioData: ...
 
 
 class AudioPlayback(Protocol):
@@ -40,9 +31,6 @@ class AudioPlayback(Protocol):
         audio: AudioData,
         *,
         device: int | None = None,
-        blocking: bool = True,
     ) -> None: ...
 
     def stop(self) -> None: ...
-
-    def wait(self) -> None: ...

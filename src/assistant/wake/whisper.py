@@ -9,9 +9,10 @@ from numpy.typing import NDArray
 
 from assistant.audio.dsp import rms, to_mono
 from assistant.audio.models import AudioData, AudioFormat
+from assistant.audio.ring_buffer import RingBuffer
 from assistant.config import STT_SAMPLE_RATE, WakeConfig
 from assistant.logger import Logger
-from assistant.stt import SpeechToText
+from assistant.stt import SpeechToText, TranscribeOptions
 from assistant.wake.exceptions import WakeError, WakeNotReadyError
 from assistant.wake.models import WakeDetection
 
@@ -32,12 +33,19 @@ class WhisperWakeWord:
         self._logger = Logger.get(__name__)
         self._keyword = _normalize_text(config.keyword)
         self._format = AudioFormat(sample_rate=STT_SAMPLE_RATE, channels=1)
-        self._buffer = np.empty(0, dtype=np.float32)
+        self._window_samples = int(config.window_seconds * STT_SAMPLE_RATE)
+        self._hop_samples = int(config.hop_seconds * STT_SAMPLE_RATE)
+        self._buffer = RingBuffer(self._window_samples)
         self._samples_since_check = 0
         self._noise_rms = 0.005
         self._ready = False
-        self._window_samples = int(config.window_seconds * STT_SAMPLE_RATE)
-        self._hop_samples = int(config.hop_seconds * STT_SAMPLE_RATE)
+        self._transcribe_options = TranscribeOptions(
+            vad_filter=config.vad_filter,
+            beam_size=config.beam_size,
+            initial_prompt=config.keyword,
+            hotwords=config.keyword,
+            no_speech_threshold=config.no_speech_threshold,
+        )
 
     @property
     def is_ready(self) -> bool:
@@ -70,7 +78,7 @@ class WhisperWakeWord:
         self.reset()
 
     def reset(self) -> None:
-        self._buffer = np.empty(0, dtype=np.float32)
+        self._buffer.clear()
         self._samples_since_check = 0
 
     def feed(self, audio: AudioData) -> WakeDetection | None:
@@ -84,21 +92,20 @@ class WhisperWakeWord:
         if samples.size == 0:
             return None
 
-        self._buffer = np.concatenate([self._buffer, samples])
-        if self._buffer.shape[0] > self._window_samples:
-            self._buffer = self._buffer[-self._window_samples :]
-
+        self._buffer.extend(samples)
         self._samples_since_check += samples.shape[0]
-        if self._buffer.shape[0] < self._window_samples:
+
+        if self._buffer.size < self._window_samples:
             return None
 
         if self._samples_since_check < self._hop_samples:
             return None
 
         self._samples_since_check = 0
-        self._update_noise_floor(self._buffer)
+        window = self._buffer.snapshot()
+        self._update_noise_floor(window)
 
-        if not self._has_speech_energy(self._buffer):
+        if not self._has_speech_energy(window):
             return None
 
         if self._should_stop():
@@ -106,12 +113,8 @@ class WhisperWakeWord:
 
         started = time.monotonic()
         transcript = self._stt.transcribe(
-            AudioData(samples=np.ascontiguousarray(self._buffer), format=self._format),
-            vad_filter=True,
-            beam_size=5,
-            initial_prompt=self._config.keyword,
-            hotwords=self._config.keyword,
-            no_speech_threshold=0.7,
+            AudioData(samples=window, format=self._format),
+            self._transcribe_options,
         )
         elapsed = time.monotonic() - started
         text = _normalize_text(transcript.text)
@@ -123,7 +126,7 @@ class WhisperWakeWord:
         if self._contains_keyword(text):
             self._logger.info("Wake check match (%.2fs): %r", elapsed, transcript.text)
             self.reset()
-            return WakeDetection(keyword=self._config.keyword, index=0)
+            return WakeDetection(keyword=self._config.keyword)
 
         self._logger.debug("Wake check miss (%.2fs): %r", elapsed, transcript.text)
         return None

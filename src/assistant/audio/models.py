@@ -23,12 +23,6 @@ class AudioFormat:
 
 
 @dataclass(frozen=True, slots=True)
-class AudioChunk:
-    samples: NDArray[np.float32]
-    format: AudioFormat
-
-
-@dataclass(frozen=True, slots=True)
 class AudioData:
     samples: NDArray[np.float32]
     format: AudioFormat

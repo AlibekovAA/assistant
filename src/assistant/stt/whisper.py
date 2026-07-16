@@ -10,7 +10,7 @@ from assistant.audio.models import AudioData
 from assistant.config import STT_SAMPLE_RATE, SttConfig
 from assistant.logger import Logger
 from assistant.stt.exceptions import SttError, SttNotReadyError
-from assistant.stt.models import Transcript, TranscriptSegment
+from assistant.stt.models import TranscribeOptions, Transcript, TranscriptSegment
 
 if TYPE_CHECKING:
     from faster_whisper import WhisperModel
@@ -79,28 +79,21 @@ class WhisperStt:
     def shutdown(self) -> None:
         self._model = None
 
-    def transcribe(
-        self,
-        audio: AudioData,
-        *,
-        vad_filter: bool | None = None,
-        beam_size: int | None = None,
-        initial_prompt: str | None = None,
-        hotwords: str | None = None,
-        no_speech_threshold: float | None = None,
-        temperature: float | None = None,
-    ) -> Transcript:
+    def transcribe(self, audio: AudioData, options: TranscribeOptions | None = None) -> Transcript:
         if self._model is None:
             raise SttNotReadyError("Speech-to-text is not initialized")
 
         samples = self._prepare_samples(audio)
-
         if samples.size == 0:
             return Transcript(text="", language=self._config.language, segments=(), duration=0.0)
 
-        use_vad = self._config.vad_filter if vad_filter is None else vad_filter
-        use_beam = self._config.beam_size if beam_size is None else beam_size
-        use_temperature = 0.0 if temperature is None else temperature
+        opts = options or TranscribeOptions()
+        use_vad = self._config.vad_filter if opts.vad_filter is None else opts.vad_filter
+        use_beam = self._config.beam_size if opts.beam_size is None else opts.beam_size
+        use_temperature = self._config.temperature if opts.temperature is None else opts.temperature
+        use_no_speech = (
+            self._config.no_speech_threshold if opts.no_speech_threshold is None else opts.no_speech_threshold
+        )
 
         try:
             segments_iter, info = self._model.transcribe(
@@ -109,10 +102,10 @@ class WhisperStt:
                 beam_size=use_beam,
                 vad_filter=use_vad,
                 condition_on_previous_text=False,
-                initial_prompt=initial_prompt,
-                hotwords=hotwords,
+                initial_prompt=opts.initial_prompt,
+                hotwords=opts.hotwords,
                 temperature=use_temperature,
-                no_speech_threshold=(0.6 if no_speech_threshold is None else no_speech_threshold),
+                no_speech_threshold=use_no_speech,
                 compression_ratio_threshold=2.4,
                 log_prob_threshold=-0.8,
                 without_timestamps=True,

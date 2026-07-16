@@ -28,7 +28,6 @@ class AudioPlayer:
         audio: AudioData,
         *,
         device: int | None = None,
-        blocking: bool = True,
     ) -> None:
         audio.format.validate()
 
@@ -60,8 +59,7 @@ class AudioPlayer:
                 f"channels={audio.format.channels}, frames={samples.shape[0]}): {error}"
             ) from error
 
-        if blocking:
-            self.wait()
+        self._wait()
 
     def stop(self) -> None:
         stream = self._stream
@@ -80,7 +78,7 @@ class AudioPlayer:
         except sd.PortAudioError as error:
             raise AudioPlaybackError(f"Failed to stop playback: {error}") from error
 
-    def wait(self) -> None:
+    def _wait(self) -> None:
         self._done.wait()
 
         stream = self._stream

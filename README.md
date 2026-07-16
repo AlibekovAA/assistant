@@ -45,8 +45,21 @@ make run
 | `ASSISTANT_WAKE_KEYWORD` | `мина` | ключевое слово |
 | `ASSISTANT_WAKE_WINDOW_SECONDS` | `2.0` | окно анализа |
 | `ASSISTANT_WAKE_HOP_SECONDS` | `1.0` | шаг проверки |
+| `ASSISTANT_WAKE_BEAM_SIZE` | `5` | beam size для wake-транскрипции |
+| `ASSISTANT_WAKE_NO_SPEECH` | `0.7` | порог no_speech для wake |
+| `ASSISTANT_WAKE_VAD_FILTER` | `true` | VAD при wake-проверке |
 
 Пайплайн: wake → запись фразы до тишины → Whisper STT → Edge TTS → воспроизведение.
+
+## Захват фразы
+
+| Переменная | По умолчанию | Описание |
+|---|---|---|
+| `ASSISTANT_UTTERANCE_SPEECH_RMS` | `0.008` | RMS-порог речи |
+| `ASSISTANT_UTTERANCE_SPEECH_ONSET_SECONDS` | `0.15` | минимальная длительность начала речи |
+| `ASSISTANT_UTTERANCE_MIN_SPEECH_SECONDS` | `0.5` | минимальная длительность фразы |
+| `ASSISTANT_UTTERANCE_SILENCE_SECONDS` | `1.2` | длительность тишины до завершения |
+| `ASSISTANT_UTTERANCE_MAX_SECONDS` | `12.0` | максимальная длительность фразы |
 
 ## STT
 
@@ -55,6 +68,13 @@ make run
 * Модель: `small`
 * Sample rate: `16000` Hz
 
+| Переменная | По умолчанию | Описание |
+|---|---|---|
+| `ASSISTANT_WHISPER_MODEL` | `small` | модель Whisper |
+| `ASSISTANT_WHISPER_BEAM_SIZE` | `8` | beam size для команд |
+| `ASSISTANT_WHISPER_NO_SPEECH` | `0.5` | порог no_speech для команд |
+| `ASSISTANT_WHISPER_TEMPERATURE` | `0.0` | temperature |
+| `ASSISTANT_WHISPER_VAD_FILTER` | `true` | VAD при транскрипции команд |
 ## TTS
 
 * Движок: `edge-tts` (нейроголос Microsoft)
