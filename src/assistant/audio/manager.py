@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from assistant.audio.devices import AudioDeviceCatalog
 from assistant.audio.models import AudioData, AudioFormat
 from assistant.audio.player import AudioPlayer, LevelCallback, PcmQueue
@@ -83,18 +85,7 @@ class AudioManager:
         self._recorder.stop()
 
     def play(self, audio: AudioData, *, on_level: LevelCallback | None = None) -> None:
-        was_capturing = self._recorder.is_active
-
-        if was_capturing:
-            _LOG.debug("Pausing capture for playback")
-            self._recorder.stop()
-
-        try:
-            self._player.play(audio=audio, device=self._output_device, on_level=on_level)
-        finally:
-            if was_capturing and not self._recorder.is_active:
-                _LOG.debug("Resuming capture after playback")
-                self.start_capture()
+        self._with_capture_paused(lambda: self._player.play(audio=audio, device=self._output_device, on_level=on_level))
 
     def play_stream(
         self,
@@ -103,6 +94,20 @@ class AudioManager:
         sample_rate: int,
         on_level: LevelCallback | None = None,
     ) -> None:
+        self._with_capture_paused(
+            lambda: self._player.play_stream(
+                pcm_queue,
+                sample_rate=sample_rate,
+                channels=1,
+                device=self._output_device,
+                on_level=on_level,
+            )
+        )
+
+    def stop_playback(self) -> None:
+        self._player.stop()
+
+    def _with_capture_paused(self, action: Callable[[], None]) -> None:
         was_capturing = self._recorder.is_active
 
         if was_capturing:
@@ -110,17 +115,8 @@ class AudioManager:
             self._recorder.stop()
 
         try:
-            self._player.play_stream(
-                pcm_queue,
-                sample_rate=sample_rate,
-                channels=1,
-                device=self._output_device,
-                on_level=on_level,
-            )
+            action()
         finally:
             if was_capturing and not self._recorder.is_active:
                 _LOG.debug("Resuming capture after playback")
                 self.start_capture()
-
-    def stop_playback(self) -> None:
-        self._player.stop()
