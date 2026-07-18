@@ -1,6 +1,5 @@
 from collections.abc import Mapping
 import json
-from typing import Any
 
 from gigachat import GigaChat
 from gigachat.exceptions import GigaChatException
@@ -125,13 +124,13 @@ def _function_arguments(arguments: object) -> dict[str, object]:
     if arguments is None:
         return {}
     if isinstance(arguments, Mapping):
-        return dict(arguments)
+        return {str(key): value for key, value in arguments.items()}
     if isinstance(arguments, str):
         try:
-            parsed: Any = json.loads(arguments)
+            parsed: object = json.loads(arguments)
         except json.JSONDecodeError as error:
             raise BrainError(f"Invalid function arguments JSON: {error}") from error
         if not isinstance(parsed, dict):
             raise BrainError("Function arguments must be a JSON object")
-        return parsed
+        return {str(key): value for key, value in parsed.items()}
     raise BrainError(f"Unsupported function arguments type: {type(arguments).__name__}")

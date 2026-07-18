@@ -1,5 +1,3 @@
-from typing import Any
-
 from gigachat.models import Function, FunctionParameters
 from gigachat.models.chat import FewShotExample, FunctionParametersProperty
 
@@ -14,8 +12,8 @@ def make_function(
     description: str,
     properties: dict[str, FunctionParametersProperty],
     required: list[str] | None = None,
-    examples: list[tuple[str, dict[str, Any]]] | None = None,
-    return_parameters: dict[str, Any] | None = None,
+    examples: list[tuple[str, dict[str, object]]] | None = None,
+    return_parameters: dict[str, object] | None = None,
 ) -> Function:
     few_shot = None
     if examples:
