@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import time
 
 import edge_tts
+from edge_tts.exceptions import EdgeTTSException
 import miniaudio
 import numpy as np
 from numpy.typing import NDArray
@@ -19,6 +20,7 @@ from assistant.core.exceptions import TtsError
 from assistant.logger import Logger
 
 _LOG = Logger.get(__name__)
+_TTS_ERRORS = (EdgeTTSException, OSError, RuntimeError, ValueError, TypeError)
 
 
 @dataclass(slots=True)
@@ -71,13 +73,13 @@ class EdgeTts:
                     timeout=TTS_DEFAULT_TIMEOUT_SECONDS,
                 )
             )
-        except (KeyboardInterrupt, SystemExit):
+        except TtsError:
             raise
         except TimeoutError as error:
             raise TtsError(f"TTS timed out after {TTS_DEFAULT_TIMEOUT_SECONDS:.0f}s ({len(cleaned)} chars)") from error
         except (miniaudio.DecodeError, miniaudio.MiniaudioError) as error:
             raise TtsError(f"Failed to decode TTS audio: {error}") from error
-        except Exception as error:
+        except _TTS_ERRORS as error:
             raise TtsError(f"Failed to synthesize speech: {error}") from error
         finally:
             loop.close()
