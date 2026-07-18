@@ -126,12 +126,12 @@ class WhisperStt:
 
         return Transcript(text=text)
 
-    def _device_candidates(self) -> list[tuple[str, str]]:
+    def _device_candidates(self) -> list[tuple[WhisperDevice, WhisperComputeType]]:
         if self._config.device != WhisperDevice.AUTO:
             device = self._config.device
             return [(device, self._resolve_compute_type(device))]
 
-        candidates: list[tuple[str, str]] = []
+        candidates: list[tuple[WhisperDevice, WhisperComputeType]] = []
 
         if self._cuda_available():
             candidates.append((WhisperDevice.CUDA, self._resolve_compute_type(WhisperDevice.CUDA)))
@@ -147,7 +147,7 @@ class WhisperStt:
         except (*_WHISPER_ERRORS, ImportError):
             return False
 
-    def _resolve_compute_type(self, device: str) -> str:
+    def _resolve_compute_type(self, device: WhisperDevice) -> WhisperComputeType:
         if self._config.compute_type != WhisperComputeType.AUTO:
             return self._config.compute_type
 

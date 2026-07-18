@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from enum import StrEnum
 from importlib.metadata import PackageNotFoundError, version
 import os
 
@@ -46,6 +47,7 @@ from assistant.constants.whisper import (
     WHISPER_DEFAULT_NO_SPEECH,
     WHISPER_DEFAULT_TEMPERATURE,
     WHISPER_DEFAULT_VAD_FILTER,
+    WhisperComputeType,
     WhisperDevice,
 )
 from assistant.core.exceptions import ConfigurationError
@@ -64,8 +66,8 @@ class AudioConfig:
 class SttConfig:
     model: str = WHISPER_DEFAULT_MODEL
     language: str = WHISPER_DEFAULT_LANGUAGE
-    device: str = WHISPER_DEFAULT_DEVICE
-    compute_type: str = WHISPER_DEFAULT_COMPUTE_TYPE
+    device: WhisperDevice = WHISPER_DEFAULT_DEVICE
+    compute_type: WhisperComputeType = WHISPER_DEFAULT_COMPUTE_TYPE
     beam_size: int = WHISPER_DEFAULT_BEAM_SIZE
     vad_filter: bool = WHISPER_DEFAULT_VAD_FILTER
     temperature: float = WHISPER_DEFAULT_TEMPERATURE
@@ -107,7 +109,7 @@ class TtsConfig:
 @dataclass(frozen=True, slots=True)
 class GigaChatConfig:
     credentials: str
-    scope: str = GIGACHAT_DEFAULT_SCOPE
+    scope: GigaChatScope = GIGACHAT_DEFAULT_SCOPE
     model: str = GIGACHAT_DEFAULT_MODEL
     verify_ssl_certs: bool = GIGACHAT_DEFAULT_VERIFY_SSL
     timeout_seconds: float = GIGACHAT_DEFAULT_TIMEOUT_SECONDS
@@ -162,8 +164,12 @@ def load_config() -> Config:
         stt = SttConfig(
             model=_non_empty("ASSISTANT_WHISPER_MODEL", stt_defaults.model),
             language=WHISPER_DEFAULT_LANGUAGE,
-            device=_str("ASSISTANT_WHISPER_DEVICE", stt_defaults.device),
-            compute_type=_str("ASSISTANT_WHISPER_COMPUTE_TYPE", stt_defaults.compute_type) or stt_defaults.compute_type,
+            device=_enum("ASSISTANT_WHISPER_DEVICE", WhisperDevice, stt_defaults.device),
+            compute_type=_enum(
+                "ASSISTANT_WHISPER_COMPUTE_TYPE",
+                WhisperComputeType,
+                stt_defaults.compute_type,
+            ),
             beam_size=_int("ASSISTANT_WHISPER_BEAM_SIZE", stt_defaults.beam_size),
             vad_filter=_bool("ASSISTANT_WHISPER_VAD_FILTER", stt_defaults.vad_filter),
             temperature=_float("ASSISTANT_WHISPER_TEMPERATURE", stt_defaults.temperature),
@@ -209,7 +215,7 @@ def load_config() -> Config:
         )
         gigachat = GigaChatConfig(
             credentials=_required_secret("ASSISTANT_GIGACHAT_CREDENTIALS"),
-            scope=_non_empty("ASSISTANT_GIGACHAT_SCOPE", gigachat_defaults.scope),
+            scope=_enum("ASSISTANT_GIGACHAT_SCOPE", GigaChatScope, gigachat_defaults.scope),
             model=_non_empty("ASSISTANT_GIGACHAT_MODEL", gigachat_defaults.model),
             verify_ssl_certs=_bool(
                 "ASSISTANT_GIGACHAT_VERIFY_SSL",
@@ -260,8 +266,6 @@ def _validate_audio(audio: AudioConfig) -> None:
 
 
 def _validate_stt(stt: SttConfig) -> None:
-    if stt.device not in WhisperDevice:
-        raise ConfigurationError(f"Invalid ASSISTANT_WHISPER_DEVICE: {stt.device!r}")
     _require_positive_int("ASSISTANT_WHISPER_BEAM_SIZE", stt.beam_size)
     if stt.cpu_threads < 0:
         raise ConfigurationError(f"Invalid ASSISTANT_WHISPER_CPU_THREADS: {stt.cpu_threads}")
@@ -298,8 +302,6 @@ def _validate_tts(tts: TtsConfig) -> None:
 
 
 def _validate_gigachat(gigachat: GigaChatConfig) -> None:
-    if gigachat.scope not in GigaChatScope:
-        raise ConfigurationError(f"Invalid ASSISTANT_GIGACHAT_SCOPE: {gigachat.scope!r}")
     _require_positive("ASSISTANT_GIGACHAT_TIMEOUT_SECONDS", gigachat.timeout_seconds)
     if not 0 <= gigachat.temperature <= 2:
         raise ConfigurationError(f"Invalid ASSISTANT_GIGACHAT_TEMPERATURE: {gigachat.temperature}")
@@ -335,6 +337,17 @@ def _package_version() -> str:
         return version(PACKAGE_NAME)
     except PackageNotFoundError:
         return FALLBACK_VERSION
+
+
+def _enum[E: StrEnum](name: str, enum_type: type[E], default: E) -> E:
+    value = os.getenv(name)
+    if value is None or value.strip() == "":
+        return default
+    try:
+        return enum_type(value.strip())
+    except ValueError as error:
+        allowed = ", ".join(repr(item.value) for item in enum_type)
+        raise ConfigurationError(f"Invalid {name}: {value!r} (expected one of {allowed})") from error
 
 
 def _optional_int(name: str) -> int | None:
