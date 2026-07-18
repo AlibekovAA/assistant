@@ -16,7 +16,7 @@ from assistant.constants.audio import (
 from assistant.constants.speech import SPEECH_POST_WAKE_READ_TIMEOUT_SECONDS
 from assistant.core.exceptions import BrainError, TtsError
 from assistant.logger import Logger
-from assistant.overlay.window import TkAvatarOverlay
+from assistant.overlay.window import Live2dAvatarOverlay
 from assistant.prompts import BRAIN_FAILURE, NOT_HEARD
 from assistant.stt.models import TranscribeOptions
 from assistant.stt.whisper import WhisperStt
@@ -43,7 +43,7 @@ class VoicePipeline:
         tts: EdgeTts,
         wake: WhisperWakeWord,
         brain: GigaChatBrain,
-        overlay: TkAvatarOverlay,
+        overlay: Live2dAvatarOverlay,
         wake_config: WakeConfig,
         utterance_config: UtteranceConfig,
         stt_config: SttConfig,

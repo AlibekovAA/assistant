@@ -12,8 +12,9 @@ dependencies = [
     "miniaudio>=1.71",
     "gigachat>=0.2.1",
     "tzdata>=2026.3",
-    "pillow>=12.3.0",
     "python-dotenv>=1.2.2",
+    "live2d-py>=0.7.0.4",
+    "pygame>=2.6.0",
 ]
 
 [project.scripts]
@@ -79,5 +80,11 @@ module = [
     "edge_tts.*",
     "miniaudio.*",
     "gigachat.*",
+    "live2d.*",
+    "pygame.*",
+    "OpenGL.*",
 ]
 ignore_missing_imports = true
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/assistant/overlay/assets" = "assistant/overlay/assets"

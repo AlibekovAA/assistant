@@ -9,7 +9,7 @@ from assistant.constants.audio import AUDIO_PIPELINE_JOIN_TIMEOUT_SECONDS
 from assistant.core.exceptions import AssistantError
 from assistant.core.pipeline import VoicePipeline
 from assistant.logger import Logger, prepare_runtime_env
-from assistant.overlay.window import TkAvatarOverlay
+from assistant.overlay.window import Live2dAvatarOverlay
 from assistant.stt.whisper import WhisperStt
 from assistant.tools.registry import ToolRegistry
 from assistant.tts.edge import EdgeTts
@@ -36,7 +36,7 @@ class Application:
                 default_timezone=config.tools.default_timezone,
             ),
         )
-        overlay = TkAvatarOverlay()
+        overlay = Live2dAvatarOverlay()
 
         self._config = config
         self._stop_event = stop_event

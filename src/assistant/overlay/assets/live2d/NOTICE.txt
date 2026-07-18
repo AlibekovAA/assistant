@@ -1,0 +1,6 @@
+Hiyori sample model from Live2D CubismNativeSamples.
+
+Use is subject to Live2D Cubism Sample Data Terms of Use:
+https://www.live2d.com/eula/live2d-sample-model-terms_en.html
+
+Source: https://github.com/Live2D/CubismNativeSamples

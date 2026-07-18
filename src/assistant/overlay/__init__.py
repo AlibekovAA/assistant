@@ -1,7 +1,3 @@
-from assistant.core.exceptions import OverlayError
-from assistant.overlay.window import TkAvatarOverlay
+from assistant.overlay.window import Live2dAvatarOverlay
 
-__all__ = [
-    "OverlayError",
-    "TkAvatarOverlay",
-]
+__all__ = ("Live2dAvatarOverlay",)
